@@ -33,7 +33,7 @@ def bookmark_page():
 @app.route('/')
 def index():
     tag_query = request.args.get('tag')
-    bookmarks = Bookmark.query.all()
+    bookmarks = Bookmark.query.order_by(Bookmark.date.desc()).all()  # Order by date, descending
 
     if tag_query:
         bookmarks = [bookmark for bookmark in bookmarks if
@@ -43,6 +43,7 @@ def index():
         bookmark.tags_list = ', '.join([tag.text for tag in bookmark.tags])
 
     return render_template('index.html', bookmarks=bookmarks)
+
 
 @app.route('/add_tag')
 def add_tag():
@@ -80,15 +81,14 @@ def remove_tag():
 @app.route('/filter_bookmarks')
 def filter_bookmarks():
     tag_query = request.args.get('tag')
-    bookmarks = Bookmark.query.all()
+    bookmarks = Bookmark.query.order_by(Bookmark.date.desc()).all()  # Order by date, descending
 
     if tag_query:
         bookmarks = [bookmark for bookmark in bookmarks if tag_query.lower() in [tag.text.lower() for tag in bookmark.tags]]
 
-    # Convert bookmarks to a JSON-serializable format, including the 'id'
     bookmarks_json = [
         {
-            'id': bookmark.id,  # Include the bookmark ID
+            'id': bookmark.id,
             'url': bookmark.url,
             'tags': ', '.join([tag.text for tag in bookmark.tags]),
             'date': bookmark.date.strftime('%Y-%m-%d')
@@ -98,6 +98,26 @@ def filter_bookmarks():
 
     return jsonify(bookmarks_json)
 
+@app.route('/delete_bookmark', methods=['DELETE'])
+def delete_bookmark():
+    bookmark_id = request.args.get('bookmarkId')
+    
+    # Find the bookmark by ID
+    bookmark = Bookmark.query.get(bookmark_id)
+    if bookmark:
+        try:
+            # Remove associated tags first
+            Tag.query.filter_by(bookmark_id=bookmark.id).delete()
+            
+            # Delete the bookmark
+            db.session.delete(bookmark)
+            db.session.commit()
+            return jsonify(success="Bookmark deleted")
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=str(e)), 500
+    else:
+        return jsonify(error="Bookmark not found"), 404
 
 
 if __name__ == '__main__':

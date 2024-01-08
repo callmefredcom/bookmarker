@@ -1,0 +1,33 @@
+/* Basic Reset */
+*, *:before, *:after {
+    box-sizing: border-box;
+}
+
+/* Container */
+.container {
+    padding: 1rem;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+}
+
+/* Button */
+.btn-primary {
+    background-color: #2563eb; /* Tailwind blue-600 */
+    color: #ffffff;
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 0.375rem; /* Tailwind rounded-md */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #1d4ed8; /* Tailwind blue-700 */
+}
+
+/* Message */
+.message {
+    margin-top: 1rem;
+    color: #dc2626; /* Tailwind red-600 */
+    font-size: 0.875rem; /* Tailwind text-sm */
+}

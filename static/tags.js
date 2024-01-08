@@ -5,28 +5,12 @@ function handleTagInput(event, bookmarkId) {
         const tagText = input.value.trim().replace(',', '');  // Remove the comma and extra spaces
 
         if (tagText) {
-            // Add the tag to the display
-            const tagDisplay = document.getElementById(`tags-${bookmarkId}`);
-            const newTag = document.createElement('span');
-            newTag.className = 'inline-block bg-blue-100 text-blue-700 p-1 mr-2 rounded';
-            newTag.textContent = tagText;
-
-            // Add 'x' button to remove tag
-            const removeBtn = document.createElement('span');
-            removeBtn.className = 'cursor-pointer text-xs text-red-500 remove-tag-btn'; // Add a class for all "X" buttons
-            removeBtn.textContent = ' x';
-            removeBtn.setAttribute('data-tag-text', tagText); // Set data attribute for tag text
-            removeBtn.setAttribute('data-bookmark-id', bookmarkId); // Set data attribute for bookmarkId
-
-            // Attach click event listener to the "X" button
-            removeBtn.addEventListener('click', function() {
-                // Optionally, add server call here to remove the tag
-                removeTag(bookmarkId, tagText, this.parentNode); // Pass the correct bookmarkId and tagText
+            // Add the tag to the display for both table and card views
+            const tagsDisplays = document.querySelectorAll(`#tags-${bookmarkId}`);
+            tagsDisplays.forEach(tagDisplay => {
+                const newTag = createTagElement(tagText, bookmarkId);
+                tagDisplay.appendChild(newTag);
             });
-
-            newTag.appendChild(removeBtn);
-
-            tagDisplay.appendChild(newTag);
 
             // Clear the input
             input.value = '';
@@ -36,15 +20,16 @@ function handleTagInput(event, bookmarkId) {
                 .then(response => response.json())
                 .then(data => {
                     console.log('Tag added:', data);
-                    // Handle response
+                    // Optionally, refresh the bookmarks to show the new tag
+                    fetchAndDisplayBookmarks(''); // or use the current search value
                 })
                 .catch(error => {
                     console.error('Error adding tag:', error);
-                    // Handle error
                 });
         }
     }
 }
+
 
 function removeTag(bookmarkId, tagText, element) {
 
@@ -65,51 +50,123 @@ function removeTag(bookmarkId, tagText, element) {
             console.error('Error removing tag:', error);
         });
 }
-
 function fetchAndDisplayBookmarks(tag) {
     fetch(`/filter_bookmarks?tag=${encodeURIComponent(tag)}`)
         .then(response => response.json())
         .then(bookmarks => {
             const tableBody = document.querySelector('tbody');
+            const cardsContainer = document.querySelector('#cardsContainer');
             tableBody.innerHTML = '';
+            cardsContainer.innerHTML = ''; // Clear previous content
+
             bookmarks.forEach(bookmark => {
-                const row = document.createElement('tr');
-                row.className = 'bg-white border-b';
-                const tagsContainer = document.createElement('div');
-                tagsContainer.id = `tags-${bookmark.id}`;
-                const tagInputContainer = document.createElement('div'); // Container for the input field
+                // Ensure tags is an array or split it from a string
+                let tagsArray = Array.isArray(bookmark.tags) ? bookmark.tags : (bookmark.tags ? bookmark.tags.split(',') : []);
 
-                if (bookmark.tags) {
-                    bookmark.tags.split(',').forEach(tagText => {
-                        const tagElement = createTagElement(tagText.trim(), bookmark.id);
-                        tagsContainer.appendChild(tagElement);
-                    });
-                }
+                // Create elements for both table and card views
+                const row = createTableRow(bookmark, tagsArray);
+                const card = createCard(bookmark, tagsArray);
 
-                // Create and append the input field for adding new tags
-                const tagInputField = document.createElement('input');
-                tagInputField.type = 'text';
-                tagInputField.className = 'tag-input p-1 border rounded';
-                tagInputField.placeholder = 'Add tags';
-                tagInputField.addEventListener('keyup', (event) => handleTagInput(event, bookmark.id));
-                tagInputContainer.appendChild(tagInputField);
-
-                // Append the tags and the input field to the tags container
-                const combinedTagsContainer = document.createElement('div');
-                combinedTagsContainer.appendChild(tagsContainer);
-                combinedTagsContainer.appendChild(tagInputContainer);
-
-                row.innerHTML = `
-                    <td class="px-4 py-2">${bookmark.url}</td>
-                    <td class="px-4 py-2"></td>
-                    <td class="px-4 py-2">${bookmark.date}</td>
-                `;
-                row.children[1].appendChild(combinedTagsContainer); // Add tags and input field to the second cell
+                // Append new elements to their respective containers
                 tableBody.appendChild(row);
+                cardsContainer.appendChild(card);
             });
         })
         .catch(error => console.error('Error fetching filtered bookmarks:', error));
 }
+
+
+
+function createTableRow(bookmark, tagsArray) {
+    let row = document.createElement('tr');
+    row.className = 'bg-white border-b';
+
+    // Create and append the delete icon cell
+    const deleteIconCell = document.createElement('td');
+    deleteIconCell.className = 'px-4 py-2';
+    deleteIconCell.innerHTML = `<span class="cursor-pointer delete-icon" onclick="confirmDeletion(${bookmark.id})">🗑️</span>`;
+    row.appendChild(deleteIconCell);
+
+    // Create and append the URL cell
+    const urlCell = document.createElement('td');
+    urlCell.className = 'px-4 py-2';
+    urlCell.innerHTML = `<a href="${bookmark.url}" target="_blank" class="text-blue-500 hover:text-blue-700">${bookmark.url}</a>`;
+    row.appendChild(urlCell);
+
+  // Create and append the tags cell
+  const tagsCell = document.createElement('td');
+  tagsCell.className = 'px-4 py-2';
+  const tagsContainer = document.createElement('div');
+  tagsContainer.id = `tags-${bookmark.id}`;
+  tagsArray.forEach(tagText => {
+      const tagElement = createTagElement(tagText.trim(), bookmark.id);
+      tagsContainer.appendChild(tagElement);
+  });
+  const tagInputField = document.createElement('input');
+  tagInputField.type = 'text';
+  tagInputField.className = 'tag-input p-1 border rounded';
+  tagInputField.placeholder = 'Add tags';
+  tagInputField.addEventListener('keyup', (event) => handleTagInput(event, bookmark.id));
+  tagsContainer.appendChild(tagInputField);
+  tagsCell.appendChild(tagsContainer);
+  row.appendChild(tagsCell);
+
+    // Create and append the date cell
+    const dateCell = document.createElement('td');
+    dateCell.className = 'px-4 py-2';
+    dateCell.textContent = bookmark.date;
+    row.appendChild(dateCell);
+
+    return row;
+}
+
+
+function createCard(bookmark, tagsArray) {
+    let card = document.createElement('div');
+    card.className = 'bg-white p-4 rounded-lg shadow mb-4 sm:hidden';
+
+    // Create the top part of the card with the URL and delete icon
+    const topPart = document.createElement('div');
+    topPart.className = 'flex items-center justify-between mb-3';
+    const urlLink = document.createElement('a');
+    urlLink.setAttribute('href', bookmark.url);
+    urlLink.setAttribute('target', '_blank');
+    urlLink.className = 'text-blue-500 hover:text-blue-700';
+    urlLink.textContent = bookmark.url;
+    const deleteIcon = document.createElement('span');
+    deleteIcon.className = 'cursor-pointer delete-icon';
+    deleteIcon.innerHTML = '🗑️';
+    deleteIcon.onclick = function() { confirmDeletion(bookmark.id); };
+    topPart.appendChild(urlLink);
+    topPart.appendChild(deleteIcon);
+
+    // Create the container for tags and input field
+    const cardContent = document.createElement('div');
+    cardContent.className = 'mb-2';
+    const tagsContainer = document.createElement('div');
+    tagsContainer.id = `tags-${bookmark.id}`;
+    tagsContainer.className = 'flex flex-wrap';
+    tagsArray.forEach(tagText => {
+        const tagElement = createTagElement(tagText.trim(), bookmark.id);
+        tagsContainer.appendChild(tagElement);
+    });
+
+    const tagInputField = document.createElement('input');
+    tagInputField.type = 'text';
+    tagInputField.className = 'tag-input p-1 border rounded w-full mt-2'; // Add the mt-2 class for top margin
+    tagInputField.placeholder = 'Add tags';
+    tagInputField.addEventListener('keyup', (event) => handleTagInput(event, bookmark.id));
+    tagsContainer.appendChild(tagInputField);
+    cardContent.appendChild(tagsContainer);
+
+    
+    // Assemble the card
+    card.appendChild(topPart);
+    card.appendChild(cardContent);
+    
+    return card;
+}
+
 
 
 
@@ -158,3 +215,56 @@ function handleTagSearch() {
 
 // Attach the debounced event to the input field
 document.getElementById('tagSearch').addEventListener('keyup', debounce(handleTagSearch));
+
+function confirmDeletion(bookmarkId) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/delete_bookmark?bookmarkId=${bookmarkId}`, {
+                method: 'DELETE', // Use DELETE method
+            })
+            .then(response => {
+                // Check if the response was okay
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok, status: ${response.status}`);
+                }
+                // Read the response as text first to check if it is valid JSON
+                return response.text();
+            })
+            .then(text => {
+                try {
+                    // Try to parse it as JSON
+                    const data = JSON.parse(text);
+                    console.log('Bookmark deleted:', data);
+                    Swal.fire(
+                        'Deleted!',
+                        'Your bookmark has been deleted.',
+                        'success'
+                    );
+                    // Refresh the page or remove the row from the table
+                    location.reload(); // Simplest approach
+                } catch (err) {
+                    // If it's not valid JSON, throw an error
+                    throw new Error(`Response was not valid JSON: ${text}`);
+                }
+            })
+            .catch(error => {
+                // Handle any errors from the fetch or parsing
+                console.error('Error deleting bookmark:', error);
+                Swal.fire(
+                    'Error!',
+                    'There was an error deleting the bookmark.',
+                    'error'
+                );
+            });
+        }
+    });
+}
+

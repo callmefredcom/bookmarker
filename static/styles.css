@@ -1,0 +1,25 @@
+.tags-input-container {
+    width: 100%; /* Adjust as needed */
+    white-space: nowrap; /* Prevents wrapping to a new line */
+}
+
+.inline-tags {
+    display: inline-block; /* or 'inline-flex' if you need flex properties */
+}
+
+
+.inline-input {
+    display: inline-block;
+    vertical-align: top; /* Aligns the input at the top with the tags */
+    min-width: 100px; /* Adjust as needed */
+    max-width: 200px; /* Prevents the input from taking up too much space */
+}
+
+
+.inline-tags > span {
+    display: inline-block;
+    margin-right: 5px; /* Adjust as needed */
+    /* ... other styles ... */
+}
+
+
