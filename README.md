@@ -4,6 +4,6 @@ This easy bookmarker has been fully generated in close partnership with ChatGPT.
 
 ## Detailed Tutorial
 
-Watch my Youtube video for detailed explanations: 
+Watch my Youtube video for detailed explanations: https://youtu.be/Qcqx31-lduk
 
 

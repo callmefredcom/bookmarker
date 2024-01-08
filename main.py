@@ -4,6 +4,7 @@ from datetime import datetime
 from flask_cors import CORS
 
 app = Flask(__name__)
+
 CORS(app) # This will enable CORS for all routes
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bookmarker.db'
 db = SQLAlchemy(app)
@@ -123,4 +124,4 @@ def delete_bookmark():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+        app.run(debug=True)

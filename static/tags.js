@@ -50,6 +50,7 @@ function removeTag(bookmarkId, tagText, element) {
             console.error('Error removing tag:', error);
         });
 }
+
 function fetchAndDisplayBookmarks(tag) {
     fetch(`/filter_bookmarks?tag=${encodeURIComponent(tag)}`)
         .then(response => response.json())
@@ -159,15 +160,13 @@ function createCard(bookmark, tagsArray) {
     tagsContainer.appendChild(tagInputField);
     cardContent.appendChild(tagsContainer);
 
-    
+
     // Assemble the card
     card.appendChild(topPart);
     card.appendChild(cardContent);
     
     return card;
 }
-
-
 
 
 function createTagElement(tagText, bookmarkId) {
@@ -215,6 +214,7 @@ function handleTagSearch() {
 
 // Attach the debounced event to the input field
 document.getElementById('tagSearch').addEventListener('keyup', debounce(handleTagSearch));
+
 
 function confirmDeletion(bookmarkId) {
     Swal.fire({
